@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>DeadFree – OS Synchronization & Deadlock Simulator</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<header class="app-header">
+		<h1>DeadFree</h1>
+		<p>Interactive simulations: Banker’s Algorithm, Reader–Writer, Producer–Consumer, Dining Philosophers, Starvation & Aging</p>
+	</header>
+
+	<nav class="tabs" role="tablist">
+		<button class="tab active" data-tab="banker">Banker’s Algorithm</button>
+		<button class="tab" data-tab="reader-writer">Reader–Writer</button>
+		<button class="tab" data-tab="producer-consumer">Producer–Consumer</button>
+		<button class="tab" data-tab="philosophers">Dining Philosophers</button>
+	</nav>
+
+	<main class="tab-panels">
+		<!-- Banker's Algorithm Panel -->
+		<section id="panel-banker" class="panel active" aria-labelledby="banker">
+			<h2>Banker’s Algorithm (Deadlock Detection & Removal)</h2>
+			<div class="controls-grid">
+				<form id="banker-form" class="control-card">
+					<h3>Inputs</h3>
+					<label>Processes <input type="number" id="b-proc" min="1" max="10" value="5"></label>
+					<label>Resources <input type="number" id="b-res" min="1" max="6" value="3"></label>
+					<div class="matrix-inputs">
+						<div>
+							<label>Available (space/comma separated)</label>
+							<textarea id="b-available" rows="2">3 3 2</textarea>
+						</div>
+						<div>
+							<label>Max matrix (rows per process)</label>
+							<textarea id="b-max" rows="6">7 5 3
+3 2 2
+9 0 2
+2 2 2
+4 3 3</textarea>
+						</div>
+						<div>
+							<label>Allocation matrix (rows per process)</label>
+							<textarea id="b-allocation" rows="6">0 1 0
+2 0 0
+3 0 2
+2 1 1
+0 0 2</textarea>
+						</div>
+					</div>
+					<div class="buttons">
+						<button type="button" id="b-start">Start</button>
+						<button type="button" id="b-pause">Pause</button>
+						<button type="button" id="b-step">Step</button>
+						<button type="button" id="b-reset">Reset</button>
+					</div>
+					<label class="slider">Speed <input type="range" id="b-speed" min="0" max="1000" step="50" value="300"></label>
+					<div class="detection-config">
+						<h4>Detection Settings</h4>
+						<label>Starvation Threshold (steps) <input type="number" id="b-starvation-threshold" min="1" max="100" value="10"></label>
+						<label><input type="checkbox" id="b-enable-starvation" checked> Enable Starvation Detection</label>
+						<label><input type="checkbox" id="b-enable-waiting" checked> Enable Waiting Detection</label>
+						<label><input type="checkbox" id="b-enable-blocking" checked> Enable Blocking Detection</label>
+					</div>
+					<div class="buttons">
+						<button type="button" id="b-export-log">Export Log (.txt)</button>
+						<button type="button" id="b-export-json">Export Log (.json)</button>
+					</div>
+				</form>
+
+				<div class="visual-card">
+					<h3>Tables</h3>
+					<div class="tables-grid">
+						<div>
+							<h4>Available</h4>
+							<div id="b-table-available"></div>
+						</div>
+						<div>
+							<h4>Work</h4>
+							<div id="b-table-work"></div>
+						</div>
+						<div>
+							<h4>Finish</h4>
+							<div id="b-table-finish"></div>
+						</div>
+					</div>
+					<div class="tables-grid">
+						<div>
+							<h4>Max</h4>
+							<div id="b-table-max"></div>
+						</div>
+						<div>
+							<h4>Allocation</h4>
+							<div id="b-table-allocation"></div>
+						</div>
+						<div>
+							<h4>Need</h4>
+							<div id="b-table-need"></div>
+						</div>
+					</div>
+					<div class="safe-seq">
+						<h4>Safe Sequence</h4>
+						<div id="b-safe-seq" class="sequence"></div>
+					</div>
+					<div class="rag">
+						<h4>Resource Allocation / Wait-For Graph</h4>
+						<canvas id="b-rag" width="640" height="320"></canvas>
+					</div>
+				</div>
+
+				<div class="log-card">
+					<h3>Logs & Recovery</h3>
+					<div id="b-logs" class="log-box"></div>
+					<div class="buttons">
+						<button type="button" id="b-recover-terminate">Recover: Victim Termination</button>
+						<button type="button" id="b-recover-preempt">Recover: Resource Preemption</button>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Reader-Writer Panel -->
+		<section id="panel-reader-writer" class="panel" aria-labelledby="reader-writer">
+			<h2>Reader–Writer Problem</h2>
+			<div class="controls-grid">
+				<form id="rw-form" class="control-card">
+					<h3>Inputs</h3>
+					<label>Readers <input type="number" id="rw-readers" min="1" max="20" value="4"></label>
+					<label>Writers <input type="number" id="rw-writers" min="1" max="20" value="2"></label>
+					<label>Mode
+						<select id="rw-mode">
+							<option value="reader">Reader preference</option>
+							<option value="fair" selected>Fair</option>
+						</select>
+					</label>
+					<label>Starvation Threshold (ticks) <input type="number" id="rw-threshold" min="1" max="1000" value="20"></label>
+					<div class="buttons">
+						<button type="button" id="rw-start">Start</button>
+						<button type="button" id="rw-pause">Pause</button>
+						<button type="button" id="rw-step">Step</button>
+						<button type="button" id="rw-reset">Reset</button>
+						<button type="button" id="rw-next-reader">Reader</button>
+						<button type="button" id="rw-next-writer">Writer</button>
+					</div>
+					<label class="slider">Speed <input type="range" id="rw-speed" min="0" max="1000" step="50" value="300"></label>
+					<div class="detection-config">
+						<h4>Detection Settings</h4>
+						<label>Starvation Threshold (ticks) <input type="number" id="rw-starvation-threshold" min="1" max="100" value="20"></label>
+						<label><input type="checkbox" id="rw-enable-starvation" checked> Enable Starvation Detection</label>
+						<label><input type="checkbox" id="rw-enable-waiting" checked> Enable Waiting Detection</label>
+						<label><input type="checkbox" id="rw-enable-blocking" checked> Enable Blocking Detection</label>
+					</div>
+					<div class="buttons">
+						<button type="button" id="rw-export-log">Export Log (.txt)</button>
+						<button type="button" id="rw-export-json">Export Log (.json)</button>
+					</div>
+				</form>
+
+				<div class="visual-card">
+					<h3>Visualization</h3>
+					<div class="rw-visual">
+						<div class="db-node" id="rw-db">DB</div>
+						<div class="actors">
+							<div>
+								<h4>Readers</h4>
+								<div id="rw-readers-list" class="actor-list"></div>
+							</div>
+							<div>
+								<h4>Writers</h4>
+								<div id="rw-writers-list" class="actor-list"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="log-card">
+					<h3>Logs</h3>
+					<div id="rw-logs" class="log-box"></div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Producer-Consumer Panel -->
+		<section id="panel-producer-consumer" class="panel" aria-labelledby="producer-consumer">
+			<h2>Producer–Consumer Problem</h2>
+			<div class="controls-grid">
+				<form id="pc-form" class="control-card">
+					<h3>Inputs</h3>
+					<label>Buffer Size <input type="number" id="pc-buffer" min="1" max="30" value="8"></label>
+					<label>Producers <input type="number" id="pc-producers" min="1" max="10" value="2"></label>
+					<label>Consumers <input type="number" id="pc-consumers" min="1" max="10" value="2"></label>
+					<div class="buttons">
+						<button type="button" id="pc-start">Start</button>
+						<button type="button" id="pc-pause">Pause</button>
+						<button type="button" id="pc-step">Step</button>
+						<button type="button" id="pc-reset">Reset</button>
+						<button type="button" id="pc-click-producer">Producer</button>
+						<button type="button" id="pc-click-consumer">Consumer</button>
+					</div>
+					<label class="slider">Speed <input type="range" id="pc-speed" min="0" max="1000" step="50" value="300"></label>
+					<div class="detection-config">
+						<h4>Detection Settings</h4>
+						<label>Starvation Threshold (cycles) <input type="number" id="pc-starvation-threshold" min="1" max="100" value="15"></label>
+						<label><input type="checkbox" id="pc-enable-starvation" checked> Enable Starvation Detection</label>
+						<label><input type="checkbox" id="pc-enable-waiting" checked> Enable Waiting Detection</label>
+						<label><input type="checkbox" id="pc-enable-blocking" checked> Enable Blocking Detection</label>
+					</div>
+					<div class="buttons">
+						<button type="button" id="pc-export-log">Export Log (.txt)</button>
+						<button type="button" id="pc-export-json">Export Log (.json)</button>
+					</div>
+				</form>
+
+				<div class="visual-card">
+					<h3>Buffer</h3>
+					<div id="pc-buffer-bar" class="buffer-bar"></div>
+					<div class="pc-actors">
+						<div>
+							<h4>Producers</h4>
+							<div id="pc-producers-list" class="actor-list"></div>
+						</div>
+						<div>
+							<h4>Consumers</h4>
+							<div id="pc-consumers-list" class="actor-list"></div>
+						</div>
+					</div>
+				</div>
+
+				<div class="log-card">
+					<h3>Logs</h3>
+					<div id="pc-logs" class="log-box"></div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Dining Philosophers Panel -->
+		<section id="panel-philosophers" class="panel" aria-labelledby="philosophers">
+			<h2>Dining Philosophers Problem</h2>
+			<div class="controls-grid">
+				<form id="dp-form" class="control-card">
+					<h3>Inputs</h3>
+					<label>Philosophers <input type="number" id="dp-count" min="3" max="12" value="5"></label>
+					<label>Starvation Threshold (ticks) <input type="number" id="dp-threshold" min="1" max="1000" value="25"></label>
+					<div class="buttons">
+						<button type="button" id="dp-start">Start</button>
+						<button type="button" id="dp-pause">Pause</button>
+						<button type="button" id="dp-step">Step</button>
+						<button type="button" id="dp-reset">Reset</button>
+					</div>
+					<div class="buttons" id="dp-controls"></div>
+					<label class="slider">Speed <input type="range" id="dp-speed" min="0" max="1000" step="50" value="300"></label>
+					<div class="detection-config">
+						<h4>Detection Settings</h4>
+						<label>Starvation Threshold (ticks) <input type="number" id="dp-starvation-threshold" min="1" max="100" value="25"></label>
+						<label><input type="checkbox" id="dp-enable-starvation" checked> Enable Starvation Detection</label>
+						<label><input type="checkbox" id="dp-enable-waiting" checked> Enable Waiting Detection</label>
+						<label><input type="checkbox" id="dp-enable-blocking" checked> Enable Blocking Detection</label>
+					</div>
+					<div class="buttons">
+						<button type="button" id="dp-export-log">Export Log (.txt)</button>
+						<button type="button" id="dp-export-json">Export Log (.json)</button>
+					</div>
+				</form>
+
+				<div class="visual-card">
+					<h3>Table</h3>
+					<canvas id="dp-canvas" width="640" height="360"></canvas>
+				</div>
+
+				<div class="log-card">
+					<h3>Logs</h3>
+					<div id="dp-logs" class="log-box"></div>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<footer class="app-footer">
+		<div class="legend">
+			<span class="pill green">Running</span>
+			<span class="pill yellow">Waiting (old)</span>
+			<span class="pill orange">Waiting</span>
+			<span class="pill red">Blocked (old)</span>
+			<span class="pill blue">Blocked</span>
+			<span class="pill purple">Starving (old)</span>
+			<span class="pill black">Starved</span>
+			<span class="pill grey">Thinking/Idle</span>
+		</div>
+		<p>Made by team ZeroDeadLock (Ayush , Hardik , Pratyush and Ananya)</p>
+	</footer>
+
+	<script type="module" src="banker.js"></script>
+	<script type="module" src="readerwriter.js"></script>
+	<script type="module" src="producerconsumer.js"></script>
+	<script type="module" src="philosophers.js"></script>
+	<script>
+		// Simple tabs
+		document.querySelectorAll('.tab').forEach(btn => {
+			btn.addEventListener('click', () => {
+				document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+				document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+				btn.classList.add('active');
+				document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+			});
+		});
+	</script>
+</body>
+</html>
+
